@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number-guesser</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+        
+        :root {
+            --bg: #0f0f12;
+            --panel: #1a1a21;
+            --accent: #00ff9d;
+            --text: #ffffff;
+            --text-muted: #aaaaaa;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+            background: linear-gradient(135deg, #0f0f12, #1a1a21);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 20%, rgba(0, 255, 157, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .app {
+            width: 100%;
+            max-width: 620px;
+            background: var(--panel);
+            border-radius: 24px;
+            box-shadow: 
+                0 0 0 1px rgba(0, 255, 157, 0.15),
+                0 25px 50px -12px rgb(0 0 0 / 0.4);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            background: #111113;
+            padding: 20px 28px;
+            border-bottom: 1px solid rgba(0, 255, 157, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #00ff9d, #00cc7a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: #000;
+            font-weight: 700;
+            box-shadow: 0 0 25px rgba(0, 255, 157, 0.6);
+        }
+        
+        .header-text {
+            flex: 1;
+        }
+        
+        .header-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: -0.8px;
+            color: var(--accent);
+        }
+        
+        .header-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        
+        .chat-container {
+            height: 420px;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #111113;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 14px 20px;
+            border-radius: 20px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .bot {
+            align-self: flex-start;
+            background: #1f1f28;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .user {
+            align-self: flex-end;
+            background: #00ff9d;
+            color: #000;
+            border-bottom-right-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .question {
+            background: #1f1f28;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            font-weight: 500;
+            margin: 12px 0;
+            text-align: center;
+            font-size: 17px;
+            padding: 22px 20px;
+            border-radius: 16px;
+        }
+        
+        .footer {
+            padding: 20px 28px;
+            background: #111113;
+            display: flex;
+            gap: 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        button {
+            flex: 1;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-yes {
+            background: #00ff9d;
+            color: #000;
+        }
+        
+        .btn-no {
+            background: #ff3b5c;
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-yes:active { background: #00e08a; }
+        .btn-no:active { background: #e02f4f; }
+        
+        .status {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-family: monospace;
+        }
+        
+        .new-game {
+            position: absolute;
+            top: 20px;
+            right: 28px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🔍</div>
+            <div class="header-text">
+                <div class="header-title">Number-guesser</div>
+                <div class="header-subtitle">Made for Mayon • Nagpur, Maharashtra</div>
+            </div>
+            <button onclick="newGame()" class="new-game">
+                <span>⟳</span> NEW GAME
+            </button>
+        </div>
+        
+        <!-- Chat -->
+        <div id="chat" class="chat-container">
+            <!-- Messages added by JavaScript -->
+        </div>
+        
+        <!-- Current Question -->
+        <div style="padding: 0 28px 12px;">
+            <div id="question-box" class="question" style="display: none;">
+                <!-- Question injected here -->
+            </div>
+        </div>
+        
+        <!-- Answer Buttons -->
+        <div class="footer">
+            <button id="yes-btn" class="btn-yes" onclick="answer(true)">
+                <span>✅</span> YES
+            </button>
+            <button id="no-btn" class="btn-no" onclick="answer(false)">
+                <span>❌</span> NO
+            </button>
+        </div>
+        
+        <div class="status" id="status">
+            Think of any number between 0 and 100. I'll guess it with smart questions!
+        </div>
+    </div>
+
+    <script>
+        // Number-guesser - Smart Number Guessing Game (Same sleek MayBot style)
+        
+        let candidates = new Set(Array.from({length: 101}, (_, i) => i));
+        let questions = [];
+        let currentQuestionText = "";
+        let currentFunc = null;
+        let isFallback = false;
+        let fallbackNumber = null;
+        
+        function generateQuestions() {
+            const list = [];
+            
+            // Questions exactly in the style you wanted
+            for (let d = 2; d <= 10; d++) {
+                list.push({
+                    text: `Is your number divisible by ${d}?`,
+                    func: (x) => x % d === 0
+                });
+            }
+            
+            for (let d = 0; d <= 9; d++) {
+                list.push({
+                    text: `Does your number contain the digit ${d}?`,
+                    func: (x) => String(x).includes(String(d))
+                });
+            }
+            
+            for (let d = 0; d <= 9; d++) {
+                list.push({
+                    text: `Does your number end with ${d}?`,
+                    func: (x) => x % 10 === d
+                });
+            }
+            
+            // Bonus powerful questions
+            list.push({
+                text: "Is your number a prime number?",
+                func: (n) => {
+                    if (n <= 1) return false;
+                    if (n <= 3) return true;
+                    if (n % 2 === 0 || n % 3 === 0) return false;
+                    let i = 5;
+                    while (i * i <= n) {
+                        if (n % i === 0 || n % (i + 2) === 0) return false;
+                        i += 6;
+                    }
+                    return true;
+                }
+            });
+            
+            list.push({
+                text: "Is your number a perfect square?",
+                func: (n) => {
+                    const root = Math.floor(Math.sqrt(n));
+                    return root * root === n;
+                }
+            });
+            
+            list.push({
+                text: "Is the sum of digits in your number even?",
+                func: (x) => {
+                    return String(x).split('').reduce((a, c) => a + parseInt(c), 0) % 2 === 0;
+                }
+            });
+            
+            return list;
+        }
+        
+        function addMessage(text, type) {
+            const chat = document.getElementById('chat');
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            msg.innerHTML = text;
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+        }
+        
+        function showQuestion(text) {
+            const box = document.getElementById('question-box');
+            box.textContent = text;
+            box.style.display = 'block';
+            currentQuestionText = text;
+        }
+        
+        function hideQuestion() {
+            document.getElementById('question-box').style.display = 'none';
+        }
+        
+        function selectBestQuestion() {
+            if (candidates.size <= 1) return null;
+            
+            let bestScore = -Infinity;
+            let bestQ = null;
+            let bestFn = null;
+            
+            for (let q of questions) {
+                let yesCount = 0;
+                for (let c of candidates) {
+                    if (q.func(c)) yesCount++;
+                }
+                const score = Math.min(yesCount, candidates.size - yesCount);
+                if (score > bestScore && score > 0) {
+                    bestScore = score;
+                    bestQ = q.text;
+                    bestFn = q.func;
+                }
+            }
+            
+            if (bestQ) {
+                return { text: bestQ, func: bestFn };
+            }
+            
+            // Fallback: guess one by one
+            if (candidates.size > 1) {
+                const sorted = Array.from(candidates).sort((a,b)=>a-b);
+                fallbackNumber = sorted[0];
+                isFallback = true;
+                return {
+                    text: `Is your number ${fallbackNumber}?`,
+                    func: null
+                };
+            }
+            return null;
+        }
+        
+        function nextQuestion() {
+            hideQuestion();
+            
+            if (candidates.size === 1) {
+                const number = Array.from(candidates)[0];
+                addMessage(`🎉 Got it! Your number is <strong>${number}</strong>!`, "bot");
+                document.getElementById('yes-btn').disabled = true;
+                document.getElementById('no-btn').disabled = true;
+                return;
+            }
+            
+            const q = selectBestQuestion();
+            if (!q) return;
+            
+            currentFunc = q.func;
+            showQuestion(q.text);
+        }
+        
+        function answer(yes) {
+            // Show the question and your answer
+            addMessage(`<strong>Q:</strong> ${currentQuestionText}`, "bot");
+            addMessage(yes ? "✅ YES" : "❌ NO", yes ? "user" : "user");
+            
+            // Filter the possible numbers
+            if (isFallback) {
+                if (yes) {
+                    candidates = new Set([fallbackNumber]);
+                } else {
+                    candidates.delete(fallbackNumber);
+                }
+                isFallback = false;
+            } else if (currentFunc) {
+                const newSet = new Set();
+                for (let c of candidates) {
+                    if ((yes && currentFunc(c)) || (!yes && !currentFunc(c))) {
+                        newSet.add(c);
+                    }
+                }
+                candidates = newSet;
+            }
+            
+            // Ask next question
+            setTimeout(nextQuestion, 400);
+        }
+        
+        function newGame() {
+            candidates = new Set(Array.from({length: 101}, (_, i) => i));
+            questions = generateQuestions();
+            isFallback = false;
+            fallbackNumber = null;
+            
+            const chat = document.getElementById('chat');
+            chat.innerHTML = '';
+            
+            document.getElementById('yes-btn').disabled = false;
+            document.getElementById('no-btn').disabled = false;
+            
+            addMessage("👋 Hi Mayon! Welcome to <strong>Number-guesser</strong>!", "bot");
+            addMessage("Think of any number from <strong>0 to 100</strong>.<br>I will guess it by asking questions like:<br>• Is your number divisible by 2?<br>• Does your number contain digit 6?<br>• Is your number multiple of 3?<br>and many more smart ones!", "bot");
+            
+            setTimeout(() => {
+                nextQuestion();
+            }, 900);
+        }
+        
+        // Start the game automatically
+        window.onload = newGame;
+    </script>
+</body>
+</html>
